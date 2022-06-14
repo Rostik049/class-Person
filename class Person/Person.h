@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 enum class Service { emergency_service, reserve, contract_service };
 enum class Weapon { knife, pistol, machine_gun, machine };
@@ -20,6 +21,7 @@ std::ostream& operator << (std::ostream& o, const Category ct)
     }
     return o;
 }
+
 std::ostream& operator << (std::ostream& o, const Service sv)
 {
     switch (sv)
@@ -57,48 +59,116 @@ public:
     virtual void bonus_salary() = 0;
     virtual void holiday_pay() = 0;
     virtual ~Person() {}
+    Person() {}
+    Person(std::string country,std::string city,std::string full_name)
+    {
+        this->country = country;
+        this->city = city;
+        this->full_name = full_name;;
+    }
+    bool countWord() 
+    {
+        int len = 0;
+        int numWords = 0;
+        for (int i = 0;i < full_name.length();i++) {
+            if (full_name[i] == ' ') {
+                len = 0;
+            }
+            else if (++len == 1) {
+                numWords++;
+            }
+        }
+        return numWords == 3;
+    }
+    bool space() 
+    {
+        for (int i = 0; i < full_name.length();i++) {
+            if (full_name[i] != ' ' && full_name[i + 1] == ' ' && full_name[i + 2] != ' ') {
+                return true;
+            }
+            else if (full_name[i] != ' ' && full_name[i + 1] == ' ' && full_name[i + 2] == ' ') {
+                return false;
+            }
+            i++;
+        }
+    }
+    bool livesInUkraine() const
+    {
+        return country == "Ukraine";
+    }
+    bool livesInLviv() const
+    {
+        return city == "Lviv";
+    }
+    void info()
+    {
+        if (livesInUkraine() && livesInLviv()) {
+            std::cout << "Lives in Ukraine in Lviv" << std::endl;
+        }
+        else if (!livesInUkraine() && !livesInLviv()) {
+            std::cout << "Lives in Ukraine not in Lviv " << std::endl;
+        }
+        else {
+            std::cout << "Lives abroad" << std::endl;
+        }
+        if (countWord() && space()) {
+            std::cout << "The full name consists of three words and one space between them" << std::endl;
+        }
+        else if (countWord() && !space()) {
+            std::cout << "The full name consists of three words and more than one space between words" << std::endl;
+        }
+        else {
+            std::cout << "Doesn't have three words" << std::endl;
+        }
+    }
+private:
+    std::string full_name;
+    std::string country;
+    std::string city;
 };
 class Soldier :public Person
 {
 public:
-    Soldier(Weapon, double TOS, int& NOF, Service);
+    Soldier(std::string country, std::string city, std::string full_name, Weapon wp, double TOS, int& NOF, Service sv);
+        //:Person(country,city,full_name) {}
     Service Get_Service()const { return service; }
     Weapon Get_Weapon()const { return weapon; }
-    void fight()
+     void fight()
     {
         if (Get_Service() != Service::reserve)
         {
             NOF++;
         }
     }
-    void reserve()
+     void reserve()
     {
         if (Get_Service() != Service::reserve)
         {
             service = Service::reserve;
         }
     }
-    void rank_system()
+     void rank_system()
     {
         if (NOF < 5)
         {
-                std::cout << "Rank - soldier"<<std::endl;
+            std::cout << "Rank - soldier" << std::endl;
         }
         if (NOF >= 5 && NOF < 10)
         {
-                std::cout << "Rank - senior soldier"<< std::endl;
+            std::cout << "Rank - senior soldier" << std::endl;
         }
         if (NOF >= 10 && NOF < 15)
         {
-                std::cout << "Rank - lance sergeant" << std::endl;
+            std::cout << "Rank - lance sergeant" << std::endl;
         }
         if (NOF >= 15)
         {
-                std::cout << "Rank - sergeant" << std::endl;
+            std::cout << "Rank - sergeant" << std::endl;
         }
     }
-    void print() override
+    void print()
     {
+        Person::info();
         std::cout << "Weapon - " << Get_Weapon() << std::endl;
         std::cout << "TOS - " << TOS << std::endl;
         std::cout << "NOF - " << NOF << std::endl;
@@ -113,19 +183,19 @@ private:
     Weapon weapon;
 };
 
-Soldier::Soldier(Weapon wp, double TOS, int& NOF, Service sv) :weapon(wp), service(sv) {
+Soldier::Soldier(std::string country, std::string city, std::string full_name, Weapon wp, double TOS, int& NOF, Service sv)
+    :Person(country, city, full_name),weapon(wp),service(sv){
     if (TOS < 0) { throw TOS; }
     this->TOS = TOS;
     if (NOF < 0) { throw NOF; }
     this->NOF = NOF;
 }
-
 class Teacher :public Person
 {
 public:
     Teacher(double experience, double& salary, Category);
     Category Get_Category()const { return category; }
-    void bonus_salary() override
+     void bonus_salary()
     {
         double res;
         if (experience <= 5)
@@ -175,7 +245,7 @@ public:
         }
         salary += res;
     }
-    void holiday_pay()override
+     void holiday_pay()
     {
         double res;
         int day;
@@ -198,12 +268,11 @@ Teacher::Teacher(double experience, double& salary, Category ct) :category(ct) {
     this->experience = experience;
     this->salary = salary;
 }
-
 class Person_System
 {
 public:
     ~Person_System();
-    void add_soldier(Weapon wp, double TOS, int& NOF, Service sv);
+    void add_soldier(std::string country, std::string city, std::string full_name,Weapon wp, double TOS, int& NOF, Service sv);
     void print();
     void fight();
     void del(int number);
@@ -211,7 +280,7 @@ public:
     void reserve(int number);
     void add_teacher(double experience, double& salary, Category ct);
     void bonus_salary(int number);
-    virtual void holiday_pay(int number);
+    void holiday_pay(int number);
 private:
     std::vector<Person*>people;
 };
@@ -222,8 +291,14 @@ Person_System::~Person_System()
 }
 void Person_System::menu()
 {
-    int wp, sv;
+    std::string country;
+    std::string city;
+    std::string full_name;
+    int wp, sv,ct;
     double TOS;int NOF;
+    double experience;
+    double salary;
+    double* sal_ptr = &salary;
     int* nof_ptr = &NOF;
     int number;
     int n;
@@ -254,20 +329,25 @@ void Person_System::menu()
                         switch (n)
                         {
                         case 1:
-                            std::cout <<"0 - knife,1 - pistol,2 - machine_gun,3 - machine;select weapon:";
+                            std::cout << "enter  country:";
+                            std::cin.get();
+                            std::getline(std::cin, country);
+                            std::cout << "enter city:";
+                            std::getline(std::cin, city);
+                            std::cout << "enter  full name:";
+                            std::cin.get();
+                            std::getline(std::cin, full_name);
+                            std::cout << "0 - knife,1 - pistol,2 - machine_gun,3 - machine;select weapon:";
                             std::cin >> wp;
                             if (wp < 0 || wp > 3) { throw wp; }
-                            std::cout << std::endl;
-                            std::cout <<"term of service:";
+                            std::cout << "term of service:";
                             std::cin >> TOS;
-                            std::cout << std::endl;
                             std::cout << "number of fights:";
                             std::cin >> NOF;
-                            std::cout << std::endl;
                             std::cout << "0 - emergency_service,1 - reserve,2 - contract_service;select service:";
                             std::cin >> sv;
                             if (sv < 0 || sv > 2) { throw sv; }
-                            add_soldier(Weapon(wp), TOS, NOF, Service(sv));
+                            add_soldier(country,city,full_name, Weapon(wp), TOS, NOF, Service(sv));
                             break;
                         case 2:
                             fight();
@@ -303,9 +383,9 @@ void Person_System::menu()
         }
     } while (n != 0);
 }
-void Person_System::add_soldier(Weapon wp, double TOS, int& NOF, Service sv)
+void Person_System::add_soldier(std::string country, std::string city, std::string full_name,Weapon wp, double TOS, int& NOF, Service sv)
 {
-    people.push_back(new Soldier(wp, TOS, NOF, sv));
+    people.push_back(new Soldier(country,city,full_name, wp, TOS, NOF, sv));
 }
 void Person_System::print()
 {
