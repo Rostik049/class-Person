@@ -61,7 +61,7 @@ public:
         double experience, double& salary, Category);
     Category Get_Category()const { return category; }
     void bonus_salary();
-    double holiday_pay(int day) const;
+    double holiday_pay(int day);
     void print() const override;
 
 private:
