@@ -65,6 +65,7 @@ public:
     void print() const override;
 
 private:
+    double res = 0;
     double experience;
     double salary;
     Category category;
