@@ -107,9 +107,9 @@ void Person::print() const
 
 Soldier::Soldier(std::string country, std::string city, std::string full_name, Weapon wp, double TOS, int& NOF, Service sv)
     :Person(country, city, full_name, Types::soldier), weapon(wp), service(sv) {
-    if (TOS < 0) { throw TOS; }
+    if (TOS < 0) { throw std::exception(); }
     this->TOS = TOS;
-    if (NOF < 0) { throw NOF; }
+    if (NOF < 0) { throw std::exception(); }
     this->NOF = NOF;
 }
 void Soldier::fight()
@@ -150,8 +150,8 @@ void Soldier::print() const
     Person::info();
     Person::print();
     std::cout << "Weapon - " << Get_Weapon() << std::endl;
-    std::cout << "TOS - " << TOS << std::endl;
-    std::cout << "NOF - " << NOF << std::endl;
+    std::cout << "Term of service; - " << TOS << std::endl;
+    std::cout << "Number of fights; - " << NOF << std::endl;
     std::cout << "Service - " << Get_Service() << std::endl;
     rank_system();
     std::cout << std::endl;
@@ -161,7 +161,9 @@ Teacher::Teacher(std::string country, std::string city, std::string full_name,
     double experience, double& salary, Category ct) : Person(country, city, full_name, Types::teacher),
     category(ct)
 {
+    if (experience < 0) { throw std::exception(); }
     this->experience = experience;
+    if (salary < 0) { throw std::exception(); }
     this->salary = salary;
 }
 void Teacher::bonus_salary()
@@ -214,16 +216,20 @@ void Teacher::bonus_salary()
     }
     salary += res;
 }
-double Teacher::holiday_pay(int day) const
+double Teacher::holiday_pay(int day) 
 {
-    return (salary / 30) * day;
+    res = (salary / 30) * day;
+    return res;
 }
 void Teacher::print() const
 {
+    Person::info();
     Person::print();
     std::cout << "experience - " << experience << std::endl;
     std::cout << "salary - " << salary << std::endl;
     std::cout << "Category - " << Get_Category() << std::endl;
+    std::cout << "holiday_pay - " << res << std::endl;
+    std::cout << std::endl;
 }
 
 Person_System::~Person_System()
@@ -236,19 +242,21 @@ void Person_System::menu()
     std::string country;
     std::string city;
     std::string full_name;
-    int wp, sv/*, ct*/;
+    int wp, sv, ct;
     double TOS; int NOF;
-    //double experience;
+    double experience,res;
+    double* res_ptr = &res;
     double salary;
     double* sal_ptr = &salary;
     int* nof_ptr = &NOF;
     int number;
-    int n;
+    int n,day;
     do
     {
         std::cout << "1. Create_soldier" << std::endl;
-        std::cout << "2. Delete" << std::endl;
-        std::cout << "3. Print" << std::endl;
+        std::cout << "2. Create_teacher" << std::endl;
+        std::cout << "3. Delete" << std::endl;
+        std::cout << "4. Print" << std::endl;
         std::cout << "0. Exit" << std::endl;
         std::cin >> n;
 
@@ -281,20 +289,21 @@ void Person_System::menu()
                             std::getline(std::cin, full_name);
                             std::cout << "0 - knife,1 - pistol,2 - machine_gun,3 - machine;select weapon:";
                             std::cin >> wp;
-                            if (wp < 0 || wp > 3) { throw wp; }
+                            if (wp < 0 || wp > 3) { throw std::exception(); }
                             std::cout << "term of service:";
                             std::cin >> TOS;
                             std::cout << "number of fights:";
                             std::cin >> NOF;
                             std::cout << "0 - emergency_service,1 - reserve,2 - contract_service;select service:";
                             std::cin >> sv;
-                            if (sv < 0 || sv > 2) { throw sv; }
+                            if (sv < 0 || sv >= 3) { throw std::exception(); }
                             add_soldier(country, city, full_name, Weapon(wp), TOS, NOF, Service(sv));
                             break;
                         case 2:
                             fight();
                             break;
                         case 3:
+                            std::cout << "enter index to reserve:";
                             std::cin >> number;
                             reserve(number);
                             break;
@@ -311,10 +320,67 @@ void Person_System::menu()
                 } while (n != 0);
                 break;
             case 2:
+                do
+                {
+                    std::cout << "1. Add_teacher" << std::endl;
+                    std::cout << "2. Bonus salary" << std::endl;
+                    std::cout << "3. Holiday pay" << std::endl;
+                    std::cout << "4. Menu" << std::endl;
+                    std::cout << "0. Exit" << std::endl;
+                    std::cin >> n;
+
+                    try
+                    {
+                        switch (n)
+                        {
+                        case 1:
+                            std::cout << "enter  country:";
+                            std::cin.get();
+                            std::getline(std::cin, country);
+                            std::cout << "enter city:";
+                            std::getline(std::cin, city);
+                            std::cout << "enter  full name:";
+                            //std::cin.get();
+                            std::getline(std::cin, full_name);
+                            std::cout << "enter  experience:";
+                            std::cin >> experience;
+                            std::cout << "enter  salary:";
+                            std::cin >> salary;
+                            std::cout << "0 - no_category,1 - first_category,2 - highest_category;select category:";
+                            std::cin >> ct;
+                            //if (ct < 0 || sv >= 3) { throw std::exception(); }
+                            add_teacher(country, city, full_name,experience,salary, Category(ct));
+                            break;
+                        case 2:
+                            std::cout << "enter index to bonus_salary:";
+                            std::cin >> number;
+                            bonus_salary(number);
+                            break;
+                        case 3:
+                            std::cout << "enter index to holiday_pay:";
+                            std::cin >> number;
+                            std::cout << "enter the number of vacation days:";
+                            std::cin >> day;
+                            holiday_pay(number, day);
+                            break;
+                        case 4:
+                            menu();
+                            break;
+
+                        }
+                    }
+                    catch (const std::exception&)
+                    {
+                        std::cout << "wrong number" << std::endl;
+                    }
+                } while (n != 0);
+                break;
+            case 3:
+                std::cout << "enter index to delete:";
                 std::cin >> number;
                 del(number);
                 break;
-            case 3:
+            case 4:
                 print();
                 break;
             }
